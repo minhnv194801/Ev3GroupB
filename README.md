@@ -9,3 +9,4 @@ Fourth, you press the connect button on the GUI
 
 Finally, you run the Ev3Robot.py on the legoEV3 Robot
 
+Things we have implemented: Human-supervised control, little bit of line following auto mode
