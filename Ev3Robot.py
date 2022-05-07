@@ -103,9 +103,9 @@ def auto_mode():
         if light.color() == Color.RED:
             break
 
-        command = s.recv(1024).decode("utf-8")
-        if command == "stop":
-            break
+        # command = s.recv(1024).decode("utf-8")
+        # if command == "stop":
+        #     break
 
     robot.stop()
 
