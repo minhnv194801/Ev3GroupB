@@ -1,7 +1,7 @@
 # Ev3GroupB
 First, you need to check the ip address of the computer.
 
-Then, you change the ip address in server.py and Ev3Robot.py
+Then, you change the ip address in server.py and Ev3Robot.py (HOST variable)
 
 Third, you run server.py on the computer
 
