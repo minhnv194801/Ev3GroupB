@@ -5,12 +5,14 @@ from kivy.app import App
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.textinput import TextInput
 from kivy.core.window import Window
+from functools import partial
 
 
 kivy.require("1.9.1")
 
-HOST = '192.168.194.1'
+HOST = '172.16.211.120'
 PORT = 42422  # Port to listen on (non-privileged ports are > 1023)
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -31,6 +33,11 @@ class Ev3App(App):
     backwardBtn = Button(text='gobackward', pos_hint={'x': .2, 'center_y': .1}, size_hint=(.1, .1))
     stopBtn = Button(text='stop', pos_hint={'x': .9, 'center_y': .1}, size_hint=(.1, .1))
     autoBtn = Button(text='auto', pos_hint={'x': .8, 'center_y': .1}, size_hint=(.1, .1))
+    table_label = Label(text='Table: ',
+                  pos_hint={'x': .1, 'center_y': .1},
+                  size_hint=(.1, .1))
+    table_text_field = TextInput(pos_hint={'x': .2, 'center_y': .1}, size_hint=(.1, .1))
+    submitBtn = Button(text='submit', pos_hint={'x': .3, 'center_y': .1}, size_hint=(.1, .1))
 
 
     def build(self):
@@ -41,6 +48,7 @@ class Ev3App(App):
         self.backwardBtn.bind(on_press=self.send_backward_command)
         self.stopBtn.bind(on_press=self.send_stop_command)
         self.autoBtn.bind(on_press=self.prepare_for_automode)
+        self.submitBtn.bind(on_press=self.send_table_command)
 
         self.layout.add_widget(self.label)
         self.layout.add_widget(self.connectBtn)
@@ -84,13 +92,9 @@ class Ev3App(App):
 
     def close_socket(self):
         conn.close()
+        self.layout.clear_widgets()
+        self.layout.add_widget(self.label)
         self.layout.add_widget(self.connectBtn)
-        self.layout.remove_widget(self.leftBtn)
-        self.layout.remove_widget(self.rightBtn)
-        self.layout.remove_widget(self.forwardBtn)
-        self.layout.remove_widget(self.backwardBtn)
-        self.layout.remove_widget(self.stopBtn)
-        self.layout.remove_widget(self.autoBtn)
         self.label.text = 'Alfred is missing! Please help me find my boy T_T'
 
 
@@ -133,7 +137,17 @@ class Ev3App(App):
         except:
             if conn.fileno() != -1:
                 self.close_socket()
-
+        
+    def send_stop_auto_command(self, event):
+        self.layout.clear_widgets()
+        self.layout.add_widget(self.leftBtn)
+        self.layout.add_widget(self.rightBtn)
+        self.layout.add_widget(self.forwardBtn)
+        self.layout.add_widget(self.backwardBtn)
+        self.layout.add_widget(self.stopBtn)
+        self.layout.add_widget(self.autoBtn)
+        self.layout.add_widget(self.label)
+        self.send_stop_command(event=None)
 
     def send_auto_command(self, event):
         try:
@@ -142,9 +156,25 @@ class Ev3App(App):
             if conn.fileno() != -1:
                 self.close_socket()
 
+    def send_table_command(self, event):
+        command = "table "
+        command += self.table_text_field.text
+        try:
+            conn.send(command.encode("UTF-8"))
+        except:
+            if conn.fileno() != -1:
+                self.close_socket()
+
 
     def prepare_for_automode(self, event):
         # Change the UI to match auto mode
+        self.layout.clear_widgets()
+        self.layout.add_widget(self.table_label)
+        self.layout.add_widget(self.table_text_field)
+        self.layout.add_widget(self.submitBtn)
+        self.layout.add_widget(self.stopBtn)
+        self.stopBtn.bind(on_press=self.send_stop_auto_command)
+
         self.send_auto_command(event=None)
 
 # creating the object root for ButtonApp() class

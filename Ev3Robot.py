@@ -12,7 +12,7 @@ from pybricks.robotics import DriveBase
 from pybricks.media.ev3dev import SoundFile, ImageFile
 
 
-HOST = '192.168.194.1'
+HOST = '172.16.211.120'
 PORT = 42422  # Port to listen on (non-privileged ports are > 1023)
 
 # This program requires LEGO EV3 MicroPython v2.0 or higher.
@@ -51,6 +51,9 @@ DRIVE_SPEED = 50
 PROPORTIONAL_GAIN = 2.0
 
 is_auto_mode = False
+table = -1
+total_table = 8
+counter = 0
 
 
 def go_left():
@@ -74,6 +77,7 @@ def go_backward():
 
 
 def stop():
+    global is_auto_mode
     is_auto_mode = False
     robot.stop()
 
@@ -86,30 +90,72 @@ def stop_wait():
 
 def auto_mode():
     # TODO: Auto mode instruction
+    global is_auto_mode
+    global table
+    global counter
     is_auto_mode = True
+    # t = threading.Thread(target=go_left)
+    
     while is_auto_mode:
-        # Calculate the deviation from the threshold.
-        deviation = light.reflection() - threshold
+        if table != -1:
+            counter = 0
+            while True:
+                # Calculate the deviation from the threshold.
+                deviation = light.reflection() - threshold
 
-        # Calculate the turn rate.
-        turn_rate = PROPORTIONAL_GAIN * deviation
+                # Calculate the turn rate.
+                turn_rate = PROPORTIONAL_GAIN * deviation
 
-        # Set the drive base speed and turn rate.
-        robot.drive(DRIVE_SPEED, turn_rate)
+                # Set the drive base speed and turn rate.
+                robot.drive(DRIVE_SPEED, turn_rate)
 
-        if (us.distance() < 100):
-            stop_wait()
+                if(us.distance() < 100):
+                    stop_wait()
 
-        if light.color() == Color.RED:
-            break
+                if light.color() == Color.RED:
+                    counter = counter + 1
+                    robot.straight(20)
+                    ev3.screen.print(counter)
+                    if counter == table:
+                        ev3.screen.load_image(ImageFile.THUMBS_UP)
+                        ev3.speaker.play_file(SoundFile.READY)
+                        ev3.screen.print('stop')
+                        robot.stop()
+                        wait(2000)
+                        break
+            
+            while True:
+                # Calculate the deviation from the threshold.
+                deviation = light.reflection() - threshold
 
-        # command = s.recv(1024).decode("utf-8")
-        # if command == "stop":
-        #     break
+                # Calculate the turn rate.
+                turn_rate = PROPORTIONAL_GAIN * deviation
+
+                # Set the drive base speed and turn rate.
+                robot.drive(DRIVE_SPEED, turn_rate)
+
+                if(us.distance() < 100):
+                    stop_wait()
+
+                if light.color() == Color.RED:
+                    counter = counter + 1
+                    robot.straight(20)
+                    ev3.screen.print(counter)
+                    if counter == total_table:
+                        table = -1
+                        counter = 0
+                        break
+                    wait(500)
+            robot.stop()
 
     robot.stop()
 
 
+def change_target_table(goal_counter):
+    global table
+    goal_table = int(goal_counter)
+    if (goal_table < total_table and goal_table > counter):
+        table = goal_table
 
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -119,15 +165,23 @@ s.sendall(b"Commands please")
 while 1:
     command = s.recv(1024).decode("utf-8")
     print(command)
-    if command == "left":
-        go_left()
-    if command == "right":
-        go_right()
-    if command == "forward":
-        go_forward()
-    if command == "backward":
-        go_backward()
-    if command == "stop":
+    command = command.split()
+    if command[0] == "left":
+        t = threading.Thread(target=go_left)
+        t.start()
+    if command[0] == "right":
+        t = threading.Thread(target=go_right)
+        t.start()
+    if command[0] == "forward":
+        t = threading.Thread(target=go_forward)
+        t.start()
+    if command[0] == "backward":
+        t = threading.Thread(target=go_backward)
+        t.start()
+    if command[0] == "stop":
         stop()
-    if command == "auto":
-        auto_mode()
+    if command[0] == "auto":
+        t = threading.Thread(target=auto_mode)
+        t.start()
+    if command[0] == "table":
+        change_target_table(command[1])
