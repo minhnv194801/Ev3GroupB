@@ -12,7 +12,7 @@ from pybricks.robotics import DriveBase
 from pybricks.media.ev3dev import SoundFile, ImageFile
 
 
-HOST = '172.16.211.120'
+HOST = '192.168.1.70'
 PORT = 42422  # Port to listen on (non-privileged ports are > 1023)
 
 # This program requires LEGO EV3 MicroPython v2.0 or higher.
@@ -147,7 +147,6 @@ def auto_mode():
                         break
                     wait(500)
             robot.stop()
-
     robot.stop()
 
 
